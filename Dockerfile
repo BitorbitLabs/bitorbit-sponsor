@@ -2,10 +2,11 @@ FROM node:14-alpine as build-stage
 
 WORKDIR /app
 
-COPY . /app
+COPY package.json yarn.lock ./
+RUN yarn install
 
-RUN apk add git 
+COPY . .
 
-RUN npm i 
 EXPOSE 3002
-CMD ["npm", "start"]
+
+CMD yarn start

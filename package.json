@@ -1,5 +1,5 @@
 {
-  "name": "velas-account-sponsor",
+  "name": "bitorbit-sponsor",
   "version": "1.0.0",
   "description": "backend for sponsoring transactions",
   "main": "index.js",
@@ -18,7 +18,7 @@
     "tweetnacl": "^1.0.3"
   },
   "scripts": {
-    "start": "./node_modules/.bin/nodemon --watch src --exec babel-node -- src/index.js"
+    "start": "babel-node -- src/index.js"
   },
   "author": "",
   "license": "ISC",
