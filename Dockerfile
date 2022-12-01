@@ -3,7 +3,7 @@ FROM node:14-alpine as build-stage
 WORKDIR /app
 
 COPY package.json yarn.lock ./
-RUN yarn install
+RUN yarn
 
 COPY . .
 
