@@ -5,39 +5,41 @@ on:
 
 env: 
   APP_NAME: bitorbit-sponsor
-  REPO: ${{ secrets.REGISTRY_HOST }}/bitorbit
+  REPO: ${{ secrets.GAR_DEV }}/${{ secrets.GCP_DEV_PROJECT }}/docker
   IMAGE_TAG: ${{ github.sha }}
+  ENVIRONMENT: dev
 
 jobs:
   docker-build:
     name: Build and push
-    runs-on: testnet-services
+    runs-on: dev
     steps:
       - uses: actions/checkout@v3
       - name: Build, tag, and push image 
-        id: build
+        env:
+          DOCKER_BUILDKIT: 1
         run: |
-          docker build -t $REPO/$APP_NAME:$IMAGE_TAG --no-cache .
+          gcloud auth configure-docker ${{ secrets.GAR_DEV }} -q
+          docker build -t $REPO/$APP_NAME:$IMAGE_TAG .
           docker tag $REPO/$APP_NAME:$IMAGE_TAG $REPO/$APP_NAME:${{ github.ref_name }}
           docker push $REPO/$APP_NAME:$IMAGE_TAG
           docker push $REPO/$APP_NAME:${{ github.ref_name }}
   deploy:
     name: Deploy via Helmfile
-    runs-on: testnet-services
+    runs-on: dev
     needs: docker-build
     steps:
-      - name: Check out bitorbit-infra
+      - name: Check out bitorbit-prod-infra
         uses: actions/checkout@v3
         with:
-          repository: BitorbitLabs/bitorbit-infra
+          repository: BitorbitLabs/bitorbit-prod-infra
           ref: master
-          ssh-key: ${{ secrets.SSH_KEY_INFRA }}
+          ssh-key: ${{ secrets.SSH_KEY_PROD_INFRA }}
       - name: Deploy via helmfile
         id: deploy
-        env:
-          SOPS_AGE_KEY: ${{ secrets.INFRA_AGE }}
         run: >
-          cd deploy &&
-          helmfile -e ${HELM_ENV} -l namespace=${NAMESPACE},name=${{ env.APP_NAME }}
-          apply --set image.tag=$IMAGE_TAG,image.repository=$REPO/$APP_NAME
-          --skip-deps --suppress-diff
+          cd helmfile &&
+          helmfile -e ${ENVIRONMENT} -l name=${APP_NAME}
+          apply --skip-deps --suppress-diff
+          --set image.tag=${IMAGE_TAG}
+          --set image.repository=${REPO}/${APP_NAME}
